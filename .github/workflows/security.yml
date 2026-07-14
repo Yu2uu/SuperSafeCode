@@ -24,7 +24,7 @@ jobs:
     name: Gate 1 - secret scanning (Gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0   # full history - a secret deleted in the latest
                            # commit is still in the history, and still leaked
@@ -35,7 +35,7 @@ jobs:
             -e GIT_CONFIG_COUNT=1 \
             -e GIT_CONFIG_KEY_0=safe.directory \
             -e GIT_CONFIG_VALUE_0=/repo \
-            ghcr.io/gitleaks/gitleaks@latest \
+            ghcr.io/gitleaks/gitleaks:latest \
             git /repo \
               --redact \
               --report-format=sarif \
@@ -43,7 +43,7 @@ jobs:
               --exit-code=1
       - name: Upload SARIF
         if: always()                          # upload especially when the scan fails
-        uses: github/codeql-action/upload-sarif@v3   # think about replacing this with version digest
+        uses: github/codeql-action/upload-sarif@v4   # think about replacing this with version digest
         with:
           sarif_file: gitleaks.sarif
           category: gitleaks
