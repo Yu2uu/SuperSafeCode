@@ -29,6 +29,21 @@ jobs:
           fetch-depth: 0   # full history - a secret deleted in the latest
                            # commit is still in the history, and still leaked
       - name: Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" \
+            -e GIT_CONFIG_COUNT=1 \
+            -e GIT_CONFIG_KEY_0=safe.directory \
+            -e GIT_CONFIG_VALUE_0=/repo \
+            ghcr.io/gitleaks/gitleaks@sha256:<DIGEST> \
+            git /repo \
+              --redact \
+              --report-format=sarif \
+              --report-path=/repo/gitleaks.sarif \
+              --exit-code=1
+      - name: Upload SARIF
+        if: always()                          # upload especially when the scan fails
+        uses: github/codeql-action/upload-sarif@v3   # think about replacing this with version digest
+        with:
+          sarif_file: gitleaks.sarif
+          category: gitleaks
