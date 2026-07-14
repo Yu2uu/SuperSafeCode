@@ -1,0 +1,27 @@
+title = "notes-api gitleaks configuration"
+
+# CRITICAL: extends the default ruleset. Without this line, gitleaks REPLACES
+# the defaults with whatever is in this file - i.e. nothing XD
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = """
+Demo credential committed in b51ea8d7b00a41ee1866f086422880b3087556e3 (initial commit of the notes API).
+
+This was never a live key. It has been rotated, and removed from source in a
+later commit - but it remains in git history permanently, and will be found by
+every scan of this repository for as long as the repository exists.
+
+That is the point. Deletion is not remediation; rotation is. This entry is a
+written acknowledgement of a dead finding.
+
+Scoped to a single commit SHA. Any new occurrence of a credential - same value,
+same rule, any file, any future commit — produces a different fingerprint and
+still fails the build.
+
+Reviewed: 2026-07-14 · Next review: 2027-01-14 · Owner: Y. Tucker
+"""
+commits = [
+  "b51ea8d7b00a41ee1866f086422880b3087556e3",
+]
