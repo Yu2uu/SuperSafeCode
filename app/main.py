@@ -6,15 +6,18 @@ Backed by SQLite. Authenticated with a shared API key.
 """
 
 import sqlite3
+import os
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# Todo: move to config before prod
-API_KEY = "sk_live_9f3a7c21e8b44d0fa16c5e93bb27d410"
-
-DB_PATH = "notes.db"
-
+# FIX (was: hardcoded secret committed to the repo - caught by Gitleaks)
+# Secrets are injected at runtime. The app refuses to start without them.
+API_KEY = os.environ.get("NOTES_API_KEY")
+if not API_KEY:
+    raise RuntimeError("NOTES_API_KEY must be set")
+ 
+DB_PATH = os.environ.get("NOTES_DB_PATH", "notes.db")
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)

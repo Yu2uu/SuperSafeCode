@@ -1,0 +1,49 @@
+name: security
+
+# Shift-left: every gate runs on every PR, before merge. Nothing reaches main
+# without passing. The expensive/noisy scans also run nightly against main so
+# newly-published CVEs in already-merged code get caught
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * *"
+
+permissions:
+  contents: read
+  security-events: write   # required to upload SARIF to the Security tab
+  pull-requests: write
+
+jobs:
+
+  # -- GATE 1
+  # Secrets. Runs first and fastest: leaked credentials is the one finding
+  # where the clock is already running, so we want to know in <30s.
+  secrets:
+    name: Gate 1 - secret scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # full history - a secret deleted in the latest
+                           # commit is still in the history, and still leaked
+      - name: Gitleaks
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" \
+            -e GIT_CONFIG_COUNT=1 \
+            -e GIT_CONFIG_KEY_0=safe.directory \
+            -e GIT_CONFIG_VALUE_0=/repo \
+            ghcr.io/gitleaks/gitleaks:latest \
+            git /repo \
+              --redact \
+              --report-format=sarif \
+              --report-path=/repo/gitleaks.sarif \
+              --exit-code=1
+      - name: Upload SARIF
+        if: always()                          # upload especially when the scan fails
+        uses: github/codeql-action/upload-sarif@v4   # think about replacing this with version digest
+        with:
+          sarif_file: gitleaks.sarif
+          category: gitleaks
