@@ -35,7 +35,7 @@ jobs:
             -e GIT_CONFIG_COUNT=1 \
             -e GIT_CONFIG_KEY_0=safe.directory \
             -e GIT_CONFIG_VALUE_0=/repo \
-            ghcr.io/gitleaks/gitleaks@sha256:<DIGEST> \
+            ghcr.io/gitleaks/gitleaks@latest \
             git /repo \
               --redact \
               --report-format=sarif \
