@@ -1,0 +1,15 @@
+rules:
+  - id: interpolated-sql-execute
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Interpolated string passed to execute().
+      Use SQL placeholders and pass values separately.
+    pattern-either:
+      - pattern: $DB.execute(f"...{$VALUE}...", ...)
+      - patterns:
+          - pattern: $DB.execute($QUERY, ...)
+          - pattern-inside: |
+              $QUERY = f"...{$VALUE}..."
+              ...
+              $DB.execute($QUERY, ...)

@@ -47,3 +47,41 @@ jobs:
         with:
           sarif_file: gitleaks.sarif
           category: gitleaks
+
+  # -- GATE 2 
+    # SAST. Reads the source for dangerous patterns without executing it.
+    # Fast and deterministic, but structurally blind to anything that only
+    # manifests at runtime - another gate will address this hole
+  sast:
+    name: Gate 2 - SAST (Semgrep)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5        # v5
+        with:
+          persist-credentials: false
+
+      - name: Test custom Semgrep rules
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src semgrep/semgrep:latest \
+            semgrep --test .semgrep/
+
+      - name: Semgrep
+        run: |
+          set -euo pipefail
+          IMAGE="semgrep/semgrep:latest"   # maybe select specific digest
+          echo "Scanning with: $IMAGE"
+          docker run --rm -v "$PWD:/src" -w /src "$IMAGE" \
+            semgrep scan \
+              --config p/security-audit \
+              --config p/python \
+              --config p/flask \
+              --config .semgrep/custom-rules.yml \
+              --sarif --output semgrep.sarif \
+              --error app/
+
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4   # v4
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
