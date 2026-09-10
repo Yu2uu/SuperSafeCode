@@ -60,6 +60,11 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Test custom Semgrep rules
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src semgrep/semgrep:latest \
+            semgrep --test .semgrep/
+
       - name: Semgrep
         run: |
           set -euo pipefail
@@ -70,8 +75,9 @@ jobs:
               --config p/security-audit \
               --config p/python \
               --config p/flask \
+              --config .semgrep/custom-rules.yml \
               --sarif --output semgrep.sarif \
-              --error
+              --error app/
 
       - name: Upload SARIF
         if: always()
