@@ -43,8 +43,8 @@ def healthz():
 @app.get("/notes/<note_id>")
 def get_note(note_id):
     with get_db() as conn:
-        query = f"SELECT id, owner, body FROM notes WHERE id = {note_id}"
-        row = conn.execute(query).fetchone()
+        query = "SELECT id, owner, body FROM notes WHERE id = ?"
+        row = conn.execute(query, (note_id,)).fetchone()
 
     if row is None:
         return jsonify(error="not found"), 404
@@ -76,5 +76,3 @@ def create_note():
 init_db()
 
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
