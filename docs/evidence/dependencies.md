@@ -20,3 +20,14 @@
 - Limitation: advisory matches do not establish exploitability
   in this application. Results depend on the resolved packages
   and advisory data available at scan time.
+
+  ## B — Dependency remediation
+
+- Commit: `08b8225e92c729619fe1afaa154a60b91e3efbe5`
+- Workflow run: https://github.com/Yu2uu/SuperSafeCode/actions/runs/34485779539?pr=4
+- Changes:
+  - Flask upgraded from 2.0.1 to 3.1.3.
+  - Werkzeug upgraded from 2.0.1 to 3.1.6.
+- Scanner configuration: unchanged from checkpoint A.
+- Result: the dependency audit and all other PR checks passed.
+- Behavioural validation: No known vulnerabilities found
