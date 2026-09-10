@@ -85,3 +85,33 @@ jobs:
         with:
           sarif_file: semgrep.sarif
           category: semgrep
+
+  # -- GATE 3
+  # Checks Python dependencies for published vulnerabilities that may have been missed
+  dependencies:
+    name: Gate 3 - Dependencies (pip-audit)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install pip-audit
+        run: python -m pip install pip-audit==2.10.1
+
+      - name: Audit Python dependencies
+        run: |
+          python -m pip_audit --version
+          python -m pip_audit \
+            --requirement requirements.txt \
+            --strict \
+            --desc \
+            --aliases \
+            --progress-spinner off
