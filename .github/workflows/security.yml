@@ -115,3 +115,74 @@ jobs:
             --desc \
             --aliases \
             --progress-spinner off
+  
+    # -- GATE 4
+  container:
+    name: Gate 4 - Container security
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      TRIVY_IMAGE: aquasec/trivy:0.74.0
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Build container
+        id: build
+        run: docker build --pull --tag notes-api:ci .
+
+      - name: Check container startup
+        run: |
+          set -euo pipefail
+
+          docker run -d --name notes-api \
+            -p 127.0.0.1:8000:8000 \
+            -e NOTES_API_KEY=ci-test-only \
+            notes-api:ci
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8000/healthz; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "Application did not become ready"
+          exit 1
+
+      - name: Inspect runtime user and Git metadata
+        run: |
+          docker exec notes-api id
+          docker exec notes-api sh -c 'test ! -e /app/.git'
+
+      - name: Scan Dockerfile configuration
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          docker run --rm \
+            -v "$PWD:/src:ro" \
+            "$TRIVY_IMAGE" config \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            /src/Dockerfile
+
+      - name: Scan image vulnerabilities
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          docker save notes-api:ci -o "$RUNNER_TEMP/notes-api.tar"
+
+          docker run --rm \
+            -v "$RUNNER_TEMP:/scan:ro" \
+            "$TRIVY_IMAGE" image \
+            --input /scan/notes-api.tar \
+            --scanners vuln \
+            --severity HIGH,CRITICAL \
+            --exit-code 1
+
+      - name: Container logs and cleanup
+        if: always()
+        run: |
+          docker logs notes-api || true
+          docker rm -f notes-api || true
