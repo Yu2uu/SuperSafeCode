@@ -160,23 +160,27 @@ jobs:
           docker exec notes-api sh -c 'test "$(id -u)" -ne 0'
           docker exec notes-api sh -c 'test ! -e /app/.git'
 
-      - name: Inspect components associated with remaining findings
+      - name: Inspect remaining vulnerability applicability
         run: |
-          docker exec notes-api sh -c '
-            echo "Relevant executables:"
+          docker exec notes-api sh -ec '
+            echo "Executable ownership and permissions:"
             for tool in infocmp mount nsenter; do
-              command -v "$tool" || true
+              path=$(command -v "$tool")
+              ls -l "$path"
+              dpkg-query -S "$path"
             done
 
-            echo "Files belonging to flagged packages:"
-            dpkg-query -L \
-              libncursesw6 libtinfo6 ncurses-base \
-              libsystemd0 libudev1 perl-base
+            echo "Process privilege settings:"
+            grep -E "^(Uid|Gid|CapEff|CapBnd|NoNewPrivs):" /proc/1/status
 
-            echo "systemd-homed and Archive::Tar files:"
-            find /usr /lib -type f \
+            echo "Targeted component search:"
+            find /usr /lib \
               \( -name systemd-homed -o -path "*/Archive/Tar.pm" \) \
-              -print 2>/dev/null
+              -print
+
+            echo "Simulated removal of unnecessary tools:"
+            apt-get --simulate remove ncurses-bin mount
+          '
           '
 
       - name: Scan Dockerfile configuration
