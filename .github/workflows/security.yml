@@ -153,9 +153,11 @@ jobs:
           echo "Application did not become ready"
           exit 1
 
-      - name: Inspect runtime user and Git metadata
+      - name: Verify non-root runtime and Git exclusion
         run: |
+          set -euo pipefail
           docker exec notes-api id
+          docker exec notes-api sh -c 'test "$(id -u)" -ne 0'
           docker exec notes-api sh -c 'test ! -e /app/.git'
 
       - name: Scan Dockerfile configuration

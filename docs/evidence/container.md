@@ -43,3 +43,16 @@ build context. This is preventative hardening
 - Reported checks: 20 total; 19 successes and 1 failure.
 - Conclusion: static analysis identified the missing non-root
   configuration, and runtime inspection confirmed root execution.
+
+  ## B — Non-root remediation
+
+- Commit: `b559c6d80479603b99f3e2a18f6d4051a3f74376`
+- Workflow run: https://github.com/Yu2uu/SuperSafeCode/actions/runs/35243040738/job/105276073102?pr=5
+- Added a non-root runtime user with UID/GID 10001.
+- Configured a writable SQLite directory at /data.
+- Runtime inspection confirmed UID 10001.
+- Startup: {"status":"ok"}
+- Dockerfile scan: Clean - no security findings
+- Image vulnerability scan: still failed.
+- Conclusion: non-root execution was established; image package
+  vulnerabilities remain a separate remediation task.
