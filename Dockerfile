@@ -2,6 +2,7 @@ FROM python:3.12-slim-trixie
 
 RUN apt-get update \
     && apt-get upgrade -y \
+    && apt-get purge -y mount \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
