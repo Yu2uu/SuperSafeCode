@@ -56,3 +56,32 @@ build context. This is preventative hardening
 - Image vulnerability scan: still failed.
 - Conclusion: non-root execution was established; image package
   vulnerabilities remain a separate remediation task.
+
+
+  ## C — Smaller base image change
+
+- Commit: `471053d86c9e9c0e6f849c341e2d8d2d8330c39e`
+- Workflow run: https://github.com/Yu2uu/SuperSafeCode/actions/runs/35244800601/job/105282127057?pr=5
+- Changed base from python:latest to python:3.12-slim-bookworm.
+- Previous reported total: 649 (593 HIGH, 56 CRITICAL).
+- New reported total: 63 (58 HIGH, 5 CRITICAL).
+- Reduction: 586 findings, approximately 90%
+- Result: image scan still fails the unchanged HIGH/CRITICAL policy
+- Interpretation: the smaller base substantially reduced reported
+  findings, but further investigation and remediation is required
+- Limitation: totals describe scanner findings, not unique exploitable
+  vulnerabilities. Image contents and advisory data can change between runs.
+
+  Additionaly \/
+### Remaining-finding review
+
+The remaining findings include both available fixes and entries
+without a listed fixed version. The next remediation applies
+available Debian package updates without changing scan thresholds.
+
+CVE-2023-45853 requires package-specific applicability review:
+Debian documents that the affected MiniZip code is not built
+into the relevant Bookworm zlib binary packages.
+
+Reference:
+https://security-tracker.debian.org/tracker/CVE-2023-45853
