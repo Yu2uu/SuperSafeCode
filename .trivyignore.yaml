@@ -1,0 +1,21 @@
+vulnerabilities:
+  - id: CVE-2026-16742
+    purls:
+      - pkg:deb/debian/libsystemd0
+      - pkg:deb/debian/libudev1
+    expired_at: 2026-10-17
+    statement: >-
+      Reviewed 2026-09-17. The affected systemd-homed executable
+      was not found in the image. CI asserts its absence.
+      Review if the image contents or deployment change
+      Reference: https://security-tracker.debian.org/tracker/CVE-2026-16742
+
+  - id: CVE-2026-9538
+    purls:
+      - pkg:deb/debian/perl-base
+    expired_at: 2026-10-17
+    statement: >-
+      Reviewed on 2026-09-17. The affected Archive::Tar module
+      was not found in the image. CI asserts its absence.
+      Review if Perl modules or image contents change.
+      Reference: https://security-tracker.debian.org/tracker/CVE-2026-9538

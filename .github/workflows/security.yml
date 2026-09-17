@@ -184,7 +184,19 @@ jobs:
               \( -name systemd-homed -o -path "*/Archive/Tar.pm" \) \
               -print
 
-            echo "Simulated removal of unnecessary tools:"
+            echo "Verify components underlying proposed exceptions are absent:"
+            matches=$(find /usr /lib \
+              \( -name systemd-homed -o -path "*/Archive/Tar.pm" \) \
+              -print)
+
+            if [ -n "$matches" ]; then
+              printf "%s\n" "$matches"
+              echo "FAIL: an affected component is present; review the exceptions"
+              exit 1
+            fi
+
+            echo "PASS: neither affected component was found"
+
           '
 
       - name: Scan Dockerfile configuration
@@ -204,10 +216,13 @@ jobs:
 
           docker run --rm \
             -v "$RUNNER_TEMP:/scan:ro" \
+            -v "$PWD/.trivyignore.yaml:/config/.trivyignore.yaml:ro" \
             "$TRIVY_IMAGE" image \
             --input /scan/notes-api.tar \
             --scanners vuln \
             --severity HIGH,CRITICAL \
+            --ignorefile /config/.trivyignore.yaml \
+            --show-suppressed \
             --exit-code 1
 
       - name: Container logs and cleanup
