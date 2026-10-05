@@ -1,0 +1,117 @@
+vulnerabilities:
+  - id: CVE-2026-16742
+    purls:
+      - pkg:deb/debian/libsystemd0
+      - pkg:deb/debian/libudev1
+    expired_at: 2026-10-17
+    statement: >-
+      Reviewed 2026-09-17. The affected systemd-homed executable
+      was not found in the image. CI asserts its absence.
+      Review if the image contents or deployment change
+      Reference: https://security-tracker.debian.org/tracker/CVE-2026-16742
+
+  - id: CVE-2026-9538
+    purls:
+      - pkg:deb/debian/perl-base
+    expired_at: 2026-10-17
+    statement: >-
+      Reviewed on 2026-09-17. The affected Archive::Tar module
+      was not found in the image. CI asserts its absence.
+      Review if Perl modules or image contents change.
+      Reference: https://security-tracker.debian.org/tracker/CVE-2026-9538
+
+  - id: CVE-2025-69720
+    purls:
+      - pkg:deb/debian/libncursesw6
+      - pkg:deb/debian/libtinfo6
+      - pkg:deb/debian/ncurses-base
+    expired_at: 2026-11-05
+    statement: >-
+      Reviewed 2026-10-05. Exception based on removed executable: the affected infocmp command was removed; CI asserts its absence. Package records remain and are not claimed to be patched.
+      Scope: local and CI portfolio use only; no live deployment.
+      Reassess before deployment or changes to image contents, application
+      behaviour, or runtime privileges. Owner: repository maintainer.
+      Reference: https://security-tracker.debian.org/tracker/CVE-2025-69720
+
+  - id: CVE-2026-78408
+    purls:
+      - pkg:deb/debian/bsdutils
+      - pkg:deb/debian/libblkid1
+      - pkg:deb/debian/liblastlog2-2
+      - pkg:deb/debian/libmount1
+      - pkg:deb/debian/libsmartcols1
+      - pkg:deb/debian/libuuid1
+      - pkg:deb/debian/login
+      - pkg:deb/debian/util-linux
+    expired_at: 2026-11-05
+    statement: >-
+      Reviewed 2026-10-05. Exception based on removed executable: the described privileged nsenter --join-cgroup entry point was removed; CI asserts nsenter is absent. Package records remain and are not claimed to be patched.
+      Scope: local and CI portfolio use only; no live deployment.
+      Reassess before deployment or changes to image contents, application
+      behaviour, or runtime privileges. Owner: repository maintainer.
+      Reference: https://security-tracker.debian.org/tracker/CVE-2026-78408
+
+  - id: CVE-2026-76642
+    purls:
+      - pkg:deb/debian/bsdutils
+      - pkg:deb/debian/libblkid1
+      - pkg:deb/debian/liblastlog2-2
+      - pkg:deb/debian/libmount1
+      - pkg:deb/debian/libsmartcols1
+      - pkg:deb/debian/libuuid1
+      - pkg:deb/debian/login
+      - pkg:deb/debian/util-linux
+    expired_at: 2026-11-05
+    statement: >-
+      Reviewed 2026-10-05. Mitigation-backed residual-risk acceptance: the mount package was removed and CI asserts the mount command is absent. This removes the identified command entry point; related libraries remain and other callers have not been exhaustively ruled out.
+      Scope: local and CI portfolio use only; no live deployment.
+      Reassess before deployment or changes to image contents, application
+      behaviour, or runtime privileges. Owner: repository maintainer.
+      Reference: https://security-tracker.debian.org/tracker/CVE-2026-76642
+
+  - id: CVE-2026-78409
+    purls:
+      - pkg:deb/debian/bsdutils
+      - pkg:deb/debian/libblkid1
+      - pkg:deb/debian/liblastlog2-2
+      - pkg:deb/debian/libmount1
+      - pkg:deb/debian/libsmartcols1
+      - pkg:deb/debian/libuuid1
+      - pkg:deb/debian/login
+      - pkg:deb/debian/util-linux
+    expired_at: 2026-11-05
+    statement: >-
+      Reviewed 2026-10-05. Mitigation-backed residual-risk acceptance: the described X-mount.subdir command entry point was removed with mount; CI asserts mount is absent. Related libraries remain and their exposure through other callers has not been exhaustively ruled out.
+      Scope: local and CI portfolio use only; no live deployment.
+      Reassess before deployment or changes to image contents, application
+      behaviour, or runtime privileges. Owner: repository maintainer.
+      Reference: https://security-tracker.debian.org/tracker/CVE-2026-78409
+
+  - id: CVE-2026-78410
+    purls:
+      - pkg:deb/debian/bsdutils
+      - pkg:deb/debian/libblkid1
+      - pkg:deb/debian/liblastlog2-2
+      - pkg:deb/debian/libmount1
+      - pkg:deb/debian/libsmartcols1
+      - pkg:deb/debian/libuuid1
+      - pkg:deb/debian/login
+      - pkg:deb/debian/util-linux
+    expired_at: 2026-11-05
+    statement: >-
+      Reviewed 2026-10-05. Mitigation-backed residual-risk acceptance: the described setuid mount entry point was removed; CI asserts mount is absent. Related libraries remain and are not claimed to be patched.
+      Scope: local and CI portfolio use only; no live deployment.
+      Reassess before deployment or changes to image contents, application
+      behaviour, or runtime privileges. Owner: repository maintainer.
+      Reference: https://security-tracker.debian.org/tracker/CVE-2026-78410
+
+  - id: CVE-2026-54369
+    purls:
+      - pkg:deb/debian/libacl1
+    expired_at: 2026-11-05
+    statement: >-
+      Reviewed 2026-10-05. Residual-risk acceptance: libacl remains vulnerable. The reviewed notes API has no identified privileged ACL operation on attacker-controlled paths and runs as UID 10001. Non-root execution reduces exposure but does not prove that exploitation is impossible.
+      Scope: local and CI portfolio use only; no live deployment.
+      Reassess before deployment or changes to image contents, application
+      behaviour, or runtime privileges. Owner: repository maintainer.
+      Reference: https://security-tracker.debian.org/tracker/CVE-2026-54369

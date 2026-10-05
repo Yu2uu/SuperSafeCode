@@ -21,7 +21,7 @@
   in this application. Results depend on the resolved packages
   and advisory data available at scan time.
 
-  ## B — Dependency remediation
+  ## B - Dependency remediation
 
 - Commit: `08b8225e92c729619fe1afaa154a60b91e3efbe5`
 - Workflow run: https://github.com/Yu2uu/SuperSafeCode/actions/runs/34485779539?pr=4
