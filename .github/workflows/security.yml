@@ -163,18 +163,13 @@ jobs:
       - name: Inspect remaining vulnerability applicability
         run: |
           docker exec notes-api sh -ec '
-            echo "Executable ownership and permissions:"
-            for tool in infocmp nsenter; do
-              path=$(command -v "$tool")
-              ls -l "$path"
-              dpkg-query -S "$path"
+            echo "Verify unnecessary executables are absent:"
+            for tool in mount infocmp nsenter; do
+              if command -v "$tool"; then
+                echo "FAIL: unexpected executable remains: $tool"
+                exit 1
+              fi
             done
-
-            echo "Verify mount executable is absent:"
-            if command -v mount; then
-              echo "FAIL: mount is still present"
-              exit 1
-            fi
 
             echo "Process privilege settings:"
             grep -E "^(Uid|Gid|CapEff|CapBnd|NoNewPrivs):" /proc/1/status

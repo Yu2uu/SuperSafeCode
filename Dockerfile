@@ -5,6 +5,9 @@ RUN apt-get update \
     && apt-get purge -y mount \
     && rm -rf /var/lib/apt/lists/*
 
+# Remove unused entry points; package records remain for vulnerability auditing purposes
+RUN rm /usr/bin/infocmp /usr/bin/nsenter
+
 WORKDIR /app
 
 COPY requirements.txt .
