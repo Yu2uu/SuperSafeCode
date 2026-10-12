@@ -1,8 +1,10 @@
 vulnerabilities:
   - id: CVE-2026-16742
     purls:
-      - pkg:deb/debian/libsystemd0
-      - pkg:deb/debian/libudev1
+      - pkg:deb/debian/ncurses-bin
+      - pkg:deb/debian/libncursesw6
+      - pkg:deb/debian/libtinfo6
+      - pkg:deb/debian/ncurses-base
     expired_at: 2026-10-17
     statement: >-
       Reviewed 2026-09-17. The affected systemd-homed executable
