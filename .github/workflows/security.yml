@@ -1,8 +1,7 @@
 name: security
 
-# Shift-left: every gate runs on every PR, before merge. Nothing reaches main
-# without passing. The expensive/noisy scans also run nightly against main so
-# newly-published CVEs in already-merged code get caught
+# Gates run on PRs, main pushes, and nightly. Configure required checks in
+# repository rules to enforce merge blocking; workflow failures alone do not.
 on:
   pull_request:
   push:
@@ -225,3 +224,98 @@ jobs:
         run: |
           docker logs notes-api || true
           docker rm -f notes-api || true
+
+  security_tests:
+    name: Gate 6 - Security regression tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install application dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Test security properties
+        run: python -m unittest discover -s tests -v
+      - name: Prove tests reject reintroduced weaknesses
+        run: python scripts/verify_security_controls.py
+
+  runtime:
+    name: Gate 5 - Runtime security (ZAP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      NOTES_API_KEY: ci-runtime-test-only
+      NOTES_TEST_URL: http://127.0.0.1:8000
+      ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:2.17.0
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Build and start API
+        run: |
+          set -euo pipefail
+          docker build --pull -t notes-runtime:ci .
+          docker run -d --name notes-runtime \
+            -p 127.0.0.1:8000:8000 \
+            -e NOTES_API_KEY notes-runtime:ci
+          curl --fail --silent --show-error \
+            --retry 30 --retry-connrefused --retry-delay 1 --max-time 5 \
+            http://127.0.0.1:8000/healthz
+      - name: Test security properties over HTTP
+        run: python -m unittest discover -s tests -v
+      - name: Prove ZAP blocks a missing security header
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/zap-reports"
+          cp .zap/rules.tsv "$RUNNER_TEMP/zap-reports/rules.tsv"
+          # ZAP writes reports as its container user; this directory has only reports.
+          chmod 777 "$RUNNER_TEMP/zap-reports"
+          docker pull "$ZAP_IMAGE"
+          docker image inspect "$ZAP_IMAGE" --format '{{json .RepoDigests}}'
+          python scripts/zap_negative_control.py > "$RUNNER_TEMP/zap-fixture.log" 2>&1 &
+          fixture_pid=$!
+          trap 'kill "$fixture_pid" 2>/dev/null || true' EXIT
+          curl --fail --silent --show-error \
+            --retry 15 --retry-connrefused --retry-delay 1 --max-time 5 \
+            http://127.0.0.1:8001/healthz
+          status=0
+          docker run --rm --network host \
+            -v "$RUNNER_TEMP/zap-reports:/zap/wrk:rw" \
+            "$ZAP_IMAGE" zap-baseline.py \
+            -t http://127.0.0.1:8001/healthz -m 1 -T 5 \
+            -c rules.tsv -I -J negative.json -r negative.html || status=$?
+          test "$status" -eq 1
+          python scripts/check_zap_control.py "$RUNNER_TEMP/zap-reports/negative.json"
+      - name: Scan API responses with ZAP
+        run: |
+          docker run --rm --network host \
+            -v "$RUNNER_TEMP/zap-reports:/zap/wrk:rw" \
+            "$ZAP_IMAGE" zap-baseline.py \
+            -t http://127.0.0.1:8000/healthz -m 1 -T 5 \
+            -c rules.tsv -I -J application.json -r application.html
+      - name: Preserve runtime reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-security-reports
+          path: |
+            ${{ runner.temp }}/zap-reports/
+            ${{ runner.temp }}/zap-fixture.log
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Runtime logs and cleanup
+        if: always()
+        run: |
+          docker logs notes-runtime || true
+          docker rm -f notes-runtime || true
