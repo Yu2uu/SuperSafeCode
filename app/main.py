@@ -7,22 +7,49 @@ Backed by SQLite. Authenticated with a shared API key.
 
 import sqlite3
 import os
+from contextlib import contextmanager
+from hmac import compare_digest
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# FIX (was: hardcoded secret committed to the repo - caught by Gitleaks)
-# Secrets are injected at runtime. The app refuses to start without them.
 API_KEY = os.environ.get("NOTES_API_KEY")
 if not API_KEY:
     raise RuntimeError("NOTES_API_KEY must be set")
  
 DB_PATH = os.environ.get("NOTES_DB_PATH", "notes.db")
 
+@contextmanager
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    return conn
+    try:
+        with conn:
+            yield conn
+    finally:
+        conn.close()
+
+
+@app.before_request
+def authenticate_notes():
+    if request.endpoint in {"get_note", "create_note"}:
+        supplied = request.headers.get("X-API-Key", "")
+        if not compare_digest(supplied.encode("utf-8"), API_KEY.encode("utf-8")):
+            return jsonify(error="unauthorised"), 401
+
+
+@app.after_request
+def security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+    return response
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify(error="not found"), 404
 
 
 def init_db():
@@ -54,14 +81,13 @@ def get_note(note_id):
 
 @app.post("/notes")
 def create_note():
-    if request.headers.get("X-API-Key") != API_KEY:
-        return jsonify(error="unauthorised"), 401
-
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify(error="JSON object is required"), 400
     owner = payload.get("owner")
     body = payload.get("body")
 
-    if not owner or not body:
+    if not isinstance(owner, str) or not isinstance(body, str) or not owner or not body:
         return jsonify(error="owner and body are required"), 400
 
     with get_db() as conn:
@@ -74,5 +100,3 @@ def create_note():
 
 
 init_db()
-
-
