@@ -11,20 +11,26 @@ on:
 
 permissions:
   contents: read
-  security-events: write   # required to upload SARIF to the Security tab
-  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
 
   # -- GATE 1
-  # Secrets. Runs first and fastest: leaked credentials is the one finding
-  # where the clock is already running, so we want to know in <30s.
+  # Jobs run in parallel; scan full history for leaked credentials.
   secrets:
     name: Gate 1 - secret scanning (Gitleaks)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write # Upload this job's SARIF results.
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
+          persist-credentials: false
           fetch-depth: 0   # full history - a secret deleted in the latest
                            # commit is still in the history, and still leaked
       - name: Gitleaks
@@ -34,7 +40,7 @@ jobs:
             -e GIT_CONFIG_COUNT=1 \
             -e GIT_CONFIG_KEY_0=safe.directory \
             -e GIT_CONFIG_VALUE_0=/repo \
-            ghcr.io/gitleaks/gitleaks:latest \
+            ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
             git /repo \
               --redact \
               --report-format=sarif \
@@ -42,32 +48,34 @@ jobs:
               --exit-code=1
       - name: Upload SARIF
         if: always()                          # upload especially when the scan fails
-        uses: github/codeql-action/upload-sarif@v4   # think about replacing this with version digest
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:
           sarif_file: gitleaks.sarif
           category: gitleaks
 
   # -- GATE 2 
-    # SAST. Reads the source for dangerous patterns without executing it.
-    # Fast and deterministic, but structurally blind to anything that only
-    # manifests at runtime - another gate will address this hole
+  # Reads source for covered dangerous patterns without executing the app.
   sast:
     name: Gate 2 - SAST (Semgrep)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write # Upload this job's SARIF results.
     steps:
-      - uses: actions/checkout@v5        # v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
 
       - name: Test custom Semgrep rules
         run: |
-          docker run --rm -v "$PWD:/src" -w /src semgrep/semgrep:latest \
+          docker run --rm -v "$PWD:/src" -w /src semgrep/semgrep:1.181.0@sha256:81474464c1f07483ba0682a44787fd93c91397419762a04abe2bafaae396304b \
             semgrep --test .semgrep/
 
       - name: Semgrep
         run: |
           set -euo pipefail
-          IMAGE="semgrep/semgrep:latest"   # maybe select specific digest
+          IMAGE="semgrep/semgrep:1.181.0@sha256:81474464c1f07483ba0682a44787fd93c91397419762a04abe2bafaae396304b"
           echo "Scanning with: $IMAGE"
           docker run --rm -v "$PWD:/src" -w /src "$IMAGE" \
             semgrep scan \
@@ -80,7 +88,7 @@ jobs:
 
       - name: Upload SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v4   # v4
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:
           sarif_file: semgrep.sarif
           category: semgrep
@@ -90,15 +98,16 @@ jobs:
   dependencies:
     name: Gate 3 - Dependencies (pip-audit)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
 
@@ -115,7 +124,7 @@ jobs:
             --aliases \
             --progress-spinner off
   
-    # -- GATE 4
+  # -- GATE 4
   container:
     name: Gate 4 - Container security
     runs-on: ubuntu-latest
@@ -123,9 +132,9 @@ jobs:
     permissions:
       contents: read
     env:
-      TRIVY_IMAGE: aquasec/trivy:0.74.0
+      TRIVY_IMAGE: aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
 
@@ -232,10 +241,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
       - name: Install application dependencies
@@ -254,12 +263,12 @@ jobs:
     env:
       NOTES_API_KEY: ci-runtime-test-only
       NOTES_TEST_URL: http://127.0.0.1:8000
-      ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:2.17.0
+      ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:2.17.0@sha256:5ccfff9a411743ab2615136a2edd7416bec9ce41572fa94e935df38c14adb2b6
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
       - name: Build and start API
@@ -307,7 +316,7 @@ jobs:
             -c rules.tsv -I -J application.json -r application.html
       - name: Preserve runtime reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: runtime-security-reports
           path: |
@@ -320,3 +329,27 @@ jobs:
         run: |
           docker logs notes-runtime || true
           docker rm -f notes-runtime || true
+
+  workflow_security:
+    name: Gate 7 - Workflow security (zizmor)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install hash-verified workflow scanner
+        run: |
+          python -m pip install --require-hashes --only-binary=:all: -r tools/requirements.txt
+      - name: Audit workflow and Dependabot configuration
+        run: |
+          zizmor --version
+          zizmor --offline --persona pedantic --min-severity low \
+            --strict-collection --no-config .github/
+      - name: Prove workflow gate rejects unsafe changes
+        run: python scripts/verify_workflow_gate.py

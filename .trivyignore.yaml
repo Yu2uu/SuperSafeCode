@@ -3,21 +3,32 @@ vulnerabilities:
     purls:
       - pkg:deb/debian/libsystemd0
       - pkg:deb/debian/libudev1
-    expired_at: 2026-10-17
+    expired_at: 2026-11-17
     statement: >-
-      Reviewed 2026-09-17. The affected systemd-homed executable
-      was not found in the image. CI asserts its absence.
-      Review if the image contents or deployment change
+      Re-reviewed 2026-10-18. Debian still lists the Trixie systemd
+      source package as vulnerable with no stable fix listed. The affected
+      systemd-homed executable is absent; the component-absence assertion
+      passed in main run 39096484471 at ae20791922223ca4152ed1a0c99b7c2e0b9b622a.
+      This exception applies only to the named binary packages and local/CI
+      portfolio use. CI must reassert absence on each build; package records
+      are not claimed to be patched. Review before deployment, image or
+      runtime changes, or expiry. Owner: repository maintainer.
       Reference: https://security-tracker.debian.org/tracker/CVE-2026-16742
 
   - id: CVE-2026-9538
     purls:
       - pkg:deb/debian/perl-base
-    expired_at: 2026-10-17
+    expired_at: 2026-11-17
     statement: >-
-      Reviewed on 2026-09-17. The affected Archive::Tar module
-      was not found in the image. CI asserts its absence.
-      Review if Perl modules or image contents change.
+      Re-reviewed 2026-10-18. Debian still lists the Trixie perl source
+      package as vulnerable with no stable fix listed. The affected
+      Archive::Tar module is absent; the component-absence assertion passed
+      in main run 39096484471 at ae20791922223ca4152ed1a0c99b7c2e0b9b622a.
+      Scope is perl-base in this local/CI portfolio image; this does not
+      apply if Archive::Tar or other Perl modules are installed later.
+      CI must reassert absence on each build; the package is not claimed
+      to be patched. Review before deployment, content changes, or expiry.
+      Owner: repository maintainer.
       Reference: https://security-tracker.debian.org/tracker/CVE-2026-9538
 
   - id: CVE-2025-69720

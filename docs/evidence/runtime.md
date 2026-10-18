@@ -74,13 +74,18 @@ python -m unittest discover -s tests -v
 python scripts/verify_security_controls.py
 ```
 
-Docker/ZAP execution is pending GitHub Actions validation because Docker is not
-installed in the local environment. After pushing this batch:
+[PR #6](https://github.com/Yu2uu/SuperSafeCode/pull/6) passed all six jobs in
+[run 38598774956](https://github.com/Yu2uu/SuperSafeCode/actions/runs/38598774956),
+at commit `e4fec44ccc0639fae1b0dd1188f1cf8c94296a39`. The GitHub API confirmed
+the job results on 2026-10-18. This includes the ZAP blocking-rule proof and
+the application scan. Download and review the advisory findings in the runtime
+artifact; a successful job alone does not establish that no warnings exist.
 
-1. Confirm all six jobs pass, including the intentional-failure proofs.
-2. Inspect the ZAP reports and triage any advisory findings.
-3. Record the Actions URL, exact commit SHA, and observed results here.
-4. Configure the new jobs as required PR checks when ready to enforce them.
+The PR merged as `ae20791922223ca4152ed1a0c99b7c2e0b9b622a`. Gates 5 and 6
+also passed in [main run 39096484471](https://github.com/Yu2uu/SuperSafeCode/actions/runs/39096484471).
+That run failed Gate 4's image vulnerability scan, so the overall main workflow
+is not recorded as green. The startup failure from the previous PR attempt was
+addressed by retrying connection resets during the bounded readiness check.
 
-The remaining pipeline-hardening work is a separate batch. These changes do not
-claim production readiness or replace the existing dependency/container gates.
+Pipeline hardening and merge enforcement are tracked in
+[the workflow evidence](pipeline.md). Docker remains unavailable locally.
