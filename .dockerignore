@@ -8,3 +8,6 @@
 .env.*
 .semgrep
 docs
+tests
+scripts
+.zap

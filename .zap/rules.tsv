@@ -1,0 +1,4 @@
+# Policy reviewed 2026-10-12: missing nosniff is blocking. Other passive alerts
+# remain visible as WARN; -I makes those advisory. This is an initial, bounded
+# runtime policy, not a claim that every ZAP warning has been remediated.
+10021	FAIL	(X-Content-Type-Options Header Missing)

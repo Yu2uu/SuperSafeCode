@@ -1,87 +1,52 @@
-# Container gate validation
+# Gate 4: container security
 
-## Baseline preparation
+## Outcome
 
-- Added a runnable container using Gunicorn
-- Application dependencies are installed from requirements.txt
-- Application source is copied explicitly
-- Added .dockerignore to exclude Git history, local environments,
-  databases, and environment files from the build context
-- Existing floating base tag and default root user remain
-  for evaluation by the container gate
-- Build, runtime checks, and security scan: not yet performed
+On 2026-10-12 the maintainer reported that the latest Gate 4 run passed.
+The policy still blocks unsuppressed HIGH and CRITICAL findings. Passing
+includes the reviewed, package-scoped exceptions in [.trivyignore.yaml](../../.trivyignore.yaml);
+it does not mean every installed package is patched or the image is suitable
+for production. The final passing run URL and commit remain to be recorded.
 
-Added .dockerignore to prevent Git history from entering the
-build context. This is preventative hardening
+## Evidence of improvement
 
-## A — Initial image scan
+| Checkpoint | Observation | Evidence |
+| --- | --- | --- |
+| Initial runnable image | Root execution; Dockerfile finding DS-0002. Image scan reported 553 Debian findings and two additional Python findings. | Commit `157894b8069ca660f3a8a02e4cf34ad64bfbd69e`, [Actions run](https://github.com/Yu2uu/SuperSafeCode/actions/runs/34606985097/job/103287708128?pr=5) |
+| Non-root execution | UID/GID 10001, health check passed, Dockerfile scan clean; image vulnerability scan still failed. | Commit `b559c6d80479603b99f3e2a18f6d4051a3f74376`, [Actions run](https://github.com/Yu2uu/SuperSafeCode/actions/runs/35243040738/job/105276073102?pr=5) |
+| Smaller base | A later comparison fell from 649 findings (593 HIGH, 56 CRITICAL) to 63 (58 HIGH, 5 CRITICAL) with Python 3.12 slim Bookworm. | Commit `471053d86c9e9c0e6f849c341e2d8d2d8330c39e`, [Actions run](https://github.com/Yu2uu/SuperSafeCode/actions/runs/35244800601/job/105282127057?pr=5) |
+| Final remediation and review | Updated Debian packages, moved to slim Trixie, removed unused entry points, and reviewed remaining findings. Latest gate passed according to the maintainer. | Current Dockerfile, workflow assertions, and exception file; final run link pending. |
 
-- Commit: 157894b8069ca660f3a8a02e4cf34ad64bfbd69e
-- Workflow run: https://github.com/Yu2uu/SuperSafeCode/actions/runs/34606985097/job/103287708128?pr=5
-- Base reference: python:latest
-- Reported environment: Debian 13.6; Python 3.14 paths.
-- Scanner: Trivy 0.74.0.
-- Policy: block HIGH and CRITICAL findings.
-- Image scan reported:
-  - 553 Debian package vulnerability findings.
-  - 2 additional Python package findings involving msgpack
-    and setuptools.
-  - No findings at the selected severity threshold in the
-    Flask, Werkzeug, or Gunicorn metadata entries.
-- Scanner warning: third-party SBOM data may affect accuracy.
-- Interpretation: the image contains components beyond those
-  covered by the application requirements audit.
-- Limitations: counts are scanner findings, not a verified count
-  of unique exploitable vulnerabilities. The origin of the
-  additional Python findings needs investigation.
+These are observations from separate runs. Counts represent package/advisory
+findings, not unique exploitable vulnerabilities. Image contents and advisory
+data can change between scans; the counts alone do not isolate each change's effect.
 
-### Runtime and configuration validation
+## Final controls
 
-- Startup: the container health endpoint returned `ok`.
-- Runtime identity: `uid=0(root) gid=0(root) groups=0(root)`.
-- Dockerfile scan: DS-0002 (HIGH), missing a non-root USER.
-- Reported checks: 20 total; 19 successes and 1 failure.
-- Conclusion: static analysis identified the missing non-root
-  configuration, and runtime inspection confirmed root execution.
+- Python 3.12 slim Trixie base; available Debian updates applied during build.
+- Gunicorn runs the application as UID/GID 10001; SQLite writes to `/data`.
+- The `mount` package is removed. `infocmp` and `nsenter` executables are removed;
+  their package records remain visible to vulnerability auditing.
+- CI checks startup, non-root execution, absence of `/app/.git`, and absence of
+  `mount`, `infocmp`, `nsenter`, `systemd-homed`, and `Archive/Tar.pm`.
+- `.dockerignore` excludes Git metadata, local environments, databases, and
+  environment files from the build context. This is preventive: the original
+  Dockerfile contained only `FROM`, so no earlier Git-history exposure is claimed.
+- Trivy scans both Dockerfile configuration and the built image. Suppressed
+  findings remain visible through `--show-suppressed`.
 
-  ## B — Non-root remediation
+## Residual risk and review dates
 
-- Commit: `b559c6d80479603b99f3e2a18f6d4051a3f74376`
-- Workflow run: https://github.com/Yu2uu/SuperSafeCode/actions/runs/35243040738/job/105276073102?pr=5
-- Added a non-root runtime user with UID/GID 10001.
-- Configured a writable SQLite directory at /data.
-- Runtime inspection confirmed UID 10001.
-- Startup: {"status":"ok"}
-- Dockerfile scan: Clean - no security findings
-- Image vulnerability scan: still failed.
-- Conclusion: non-root execution was established; image package
-  vulnerabilities remain a separate remediation task.
+Eight CVE exceptions are scoped to named packages and local/CI portfolio use.
+The exception file records component-absence evidence or explicit residual-risk
+acceptance. Non-root execution and executable removal are not proof that every
+related library is unexploitable. No live deployment is covered by this decision.
 
+The `systemd-homed` and `Archive::Tar` exceptions expire on **2026-10-17**;
+the other six expire on **2026-11-05**. Recheck upstream fixes and applicability
+before expiry. Remove exceptions when resolved; any renewal requires a fresh
+documented review. CI must continue to fail if an asserted-absent component returns.
 
-  ## C — Smaller base image change
-
-- Commit: `471053d86c9e9c0e6f849c341e2d8d2d8330c39e`
-- Workflow run: https://github.com/Yu2uu/SuperSafeCode/actions/runs/35244800601/job/105282127057?pr=5
-- Changed base from python:latest to python:3.12-slim-bookworm.
-- Previous reported total: 649 (593 HIGH, 56 CRITICAL).
-- New reported total: 63 (58 HIGH, 5 CRITICAL).
-- Reduction: 586 findings, approximately 90%
-- Result: image scan still fails the unchanged HIGH/CRITICAL policy
-- Interpretation: the smaller base substantially reduced reported
-  findings, but further investigation and remediation is required
-- Limitation: totals describe scanner findings, not unique exploitable
-  vulnerabilities. Image contents and advisory data can change between runs.
-
-  Additionaly \/
-### Remaining-finding review
-
-The remaining findings include both available fixes and entries
-without a listed fixed version. The next remediation applies
-available Debian package updates without changing scan thresholds.
-
-CVE-2023-45853 requires package-specific applicability review:
-Debian documents that the affected MiniZip code is not built
-into the relevant Bookworm zlib binary packages.
-
-Reference:
-https://security-tracker.debian.org/tracker/CVE-2023-45853
+Before closing this checkpoint, add the final passing Actions URL and its exact
+commit SHA. Use that run's totals if recording final counts; do not infer them
+from earlier scans.
