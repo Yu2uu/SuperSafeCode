@@ -1,0 +1,5 @@
+# zizmor wheels: Linux x86_64 (CI) and Windows x86_64 (local review).
+# Update the version and hashes together; pip must verify the downloaded wheel.
+zizmor==1.31.1 \
+    --hash=sha256:58e878eb2dbd2c6183c105e1ac28c14f7dd1eca44a783f1fe2a69647d012c410 \
+    --hash=sha256:3b35b393e8d437e275c7e399047c9892ccc290f3fc5e6aeb9f65a5d3b2a470e0
