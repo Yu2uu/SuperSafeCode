@@ -65,7 +65,7 @@ Download `runtime-security-reports` from the Actions run for the negative-contro
 and application JSON/HTML reports. Reports are retained for 14 days. The workflow
 also prints the ZAP image digest for reproducibility of the evidence.
 
-## Reproduce and finish
+## Reproduce and results
 
 From the repository root with project dependencies installed:
 
@@ -76,16 +76,18 @@ python scripts/verify_security_controls.py
 
 [PR #6](https://github.com/Yu2uu/SuperSafeCode/pull/6) passed all six jobs in
 [run 38598774956](https://github.com/Yu2uu/SuperSafeCode/actions/runs/38598774956),
-at commit `e4fec44ccc0639fae1b0dd1188f1cf8c94296a39`. The GitHub API confirmed
-the job results on 2026-10-18. This includes the ZAP blocking-rule proof and
+at commit `e4fec44ccc0639fae1b0dd1188f1cf8c94296a39`. The job results were checked
+on 2026-10-18. This includes the ZAP blocking-rule proof and
 the application scan. Download and review the advisory findings in the runtime
 artifact; a successful job alone does not establish that no warnings exist.
 
 The PR merged as `ae20791922223ca4152ed1a0c99b7c2e0b9b622a`. Gates 5 and 6
 also passed in [main run 39096484471](https://github.com/Yu2uu/SuperSafeCode/actions/runs/39096484471).
-That run failed Gate 4's image vulnerability scan, so the overall main workflow
-is not recorded as green. The startup failure from the previous PR attempt was
+That historical run failed Gate 4's image vulnerability scan. The startup failure from the previous PR attempt was
 addressed by retrying connection resets during the bounded readiness check.
 
-Pipeline hardening and merge enforcement are tracked in
-[the workflow evidence](pipeline.md). Docker remains unavailable locally.
+All seven gates subsequently passed in [main run 39307160136](https://github.com/Yu2uu/SuperSafeCode/actions/runs/39307160136)
+at commit `cd635acac40f55de30d565d9056d406709576199`, checked on 2026-10-19.
+Pipeline hardening and merge-protection configuration are
+recorded in [the workflow evidence](pipeline.md). Docker execution was validated
+in CI, not locally.

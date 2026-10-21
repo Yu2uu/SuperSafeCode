@@ -26,3 +26,15 @@
   detection gap for this SQL construction pattern.
 - Limitation: this is syntactic detection, not universal SQL
   injection coverage or proof that input is attacker-controlled.
+
+## C - Remediation and final validation
+
+The application now uses SQLite placeholders and passes values separately for
+reads and writes. It runs under Gunicorn in the container. Custom rule fixtures
+exercise unsafe and safe SQL patterns, and behavioral tests reject the tested
+SQL injection payloads.
+
+Gate 2 passed in [main run 39307160136](https://github.com/Yu2uu/SuperSafeCode/actions/runs/39307160136)
+at `cd635acac40f55de30d565d9056d406709576199`, checked on 2026-10-19.
+This closes the demonstrated pattern-specific gap; it does not
+establish universal SQL injection detection.
