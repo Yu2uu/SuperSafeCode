@@ -3,12 +3,13 @@
 ## Outcome
 
 Gate 4 passed in [PR #6 run 38598774956](https://github.com/Yu2uu/SuperSafeCode/actions/runs/38598774956)
-at commit `e4fec44ccc0639fae1b0dd1188f1cf8c94296a39`, verified through the GitHub
-API on 2026-10-18.
+at commit `e4fec44ccc0639fae1b0dd1188f1cf8c94296a39`, checked on 2026-10-18.
 The policy still blocks unsuppressed HIGH and CRITICAL findings. Passing
 includes the reviewed, package-scoped exceptions in [.trivyignore.yaml](../../.trivyignore.yaml);
 it does not mean every installed package is patched or the image is suitable
-for production. The later main run failed the image scan; see the review below.
+for production. A later run failed after exceptions expired; after reassessment,
+Gate 4 passed again in [main run 39307160136](https://github.com/Yu2uu/SuperSafeCode/actions/runs/39307160136)
+at `cd635acac40f55de30d565d9056d406709576199`, verified on 2026-10-19.
 
 ## Evidence of improvement
 
@@ -52,8 +53,8 @@ documented review. CI must continue to fail if an asserted-absent component retu
 
 The [subsequent main run](https://github.com/Yu2uu/SuperSafeCode/actions/runs/39096484471/job/117583902938)
 at commit `ae20791922223ca4152ed1a0c99b7c2e0b9b622a` passed startup, non-root,
-component-absence, and Dockerfile checks, but failed the image scan. The maintainer
-provided the scan output dated 2026-10-18: three HIGH findings, zero CRITICAL,
+component-absence, and Dockerfile checks, but failed the image scan. The
+2026-10-18 scan reported three HIGH findings, zero CRITICAL,
 and 37 suppressed findings. The three blockers correspond exactly to the two
 exceptions that expired on October 17:
 
@@ -73,6 +74,6 @@ No fixed Trixie version was listed. The latest successful component-absence
 assertions support a 30-day renewal of the same binary-package scope for local/CI
 use. This is a renewed applicability decision, not a patch or proof that the
 whole scan now passes. Every new build must still pass those assertions and the
-vulnerability policy. With identical findings and the renewed exceptions loaded,
-the expected result is zero unsuppressed findings and 40 suppressed findings.
-That is an expectation, not a new scan result; CI validation remains pending.
+vulnerability policy. The subsequent passing main run linked above confirms
+that the gate passed after renewal. The exact suppressed total for that run
+was not checked.

@@ -51,7 +51,7 @@ have a seven-day cooldown; security updates are not subject to this setting.
 See [the Dependabot reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#cooldown).
 
 Scanner image references inside shell scripts and environment values need manual
-review; this configuration does not claim Dependabot updates them. For each
+updates; Dependabot is not configured to update them. For each
 scanner update, select an official release, resolve its registry digest, replace
 the tag and digest together, and rerun the gate and its failure proof. Update both
 Semgrep occurrences together. For zizmor, review the wheel hashes alongside the
@@ -62,19 +62,23 @@ cooldown.
 
 Local validation: the hardened workflow and Dependabot configuration produce no
 findings under the configured zizmor policy. Both negative controls are rejected.
-GitHub validation of this new batch is pending; Docker is unavailable locally.
+GitHub validation passed after [PR #7](https://github.com/Yu2uu/SuperSafeCode/pull/7)
+merged. All seven jobs passed in [main run 39307160136](https://github.com/Yu2uu/SuperSafeCode/actions/runs/39307160136)
+at `cd635acac40f55de30d565d9056d406709576199`, checked on 2026-10-19.
+Docker checks ran in CI; Docker was unavailable locally.
 
-Digest pinning fixes the selected image content, not the entire build. Hosted
-runners, Python setup downloads, pip transitive resolution, Debian package
-updates, Semgrep registry rules, and vulnerability databases remain external
-inputs. Offline zizmor cannot perform its online advisory or repository audits,
-and it does not prove the security of arbitrary shell scripts or dependencies.
-These boundaries are retained explicitly rather than claiming a hermetic build.
+Image digests pin the selected images. Builds still depend on hosted runners,
+Python setup downloads, resolved pip dependencies, and Debian package repositories.
+Scans also depend on changing Semgrep registry rules and vulnerability databases.
+Offline zizmor skips online advisory and repository audits. It checks workflow
+configuration, not the security of arbitrary shell scripts or dependencies.
 
-GitHub API inspection on 2026-10-18 reported `main` as unprotected and returned
-no active rules for that branch. A green scanner job therefore did not establish
-merge enforcement. Follow [the branch-protection instructions](../branch-protection.md)
-and capture a blocked PR before recording that requirement as complete.
+On 2026-10-18, `main` had no active branch rules. By 2026-10-19, the
+`main-security-checks` ruleset was active,
+requiring a PR, all seven GitHub Actions checks, and an up-to-date branch, with
+force-push and deletion restrictions. The configuration was checked, but a
+separate blocked-merge test was not performed. See [branch protection](../branch-protection.md)
+for the verification method.
 
 ## Reproduce
 
@@ -88,6 +92,5 @@ CI uses the same options with `python` and `zizmor` on PATH. Expected results:
 audit exit 0 for the hardened workflow; two printed PASS messages confirming
 that the deliberately weakened variants produced blocking findings.
 
-After pushing, record the seven-job Actions run and exact commit here. Preserve
-the distinction between scanner success, the expired-exception review in
-[Gate 4](container.md), and repository merge enforcement.
+The linked run records the passing implementation. Ongoing maintenance includes
+reviewing dependency updates, new findings, and the [Gate 4 exceptions](container.md).

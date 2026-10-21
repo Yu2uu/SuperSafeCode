@@ -7,7 +7,7 @@
 - Tool: pip-audit
 - Scope: requirements.txt and its resolved transitive dependencies.
 - Result: scanner reported 21 vulnerability findings; the audit
-  exited with code 1 and failed the job.- Job conclusion: The pip audit resulted in a faliure detailing 21 known vunrabilities across 2 packages
+  exited with code 1 and failed the job across two affected packages.
 - Affected packages: Flask 2.0.1 and Werkzeug 2.0.1.
 - Counting limitation: the output contains repeated advisory
   entries and overlapping identifiers. The reported count is
@@ -21,7 +21,7 @@
   in this application. Results depend on the resolved packages
   and advisory data available at scan time.
 
-  ## B - Dependency remediation
+## B - Dependency remediation
 
 - Commit: `08b8225e92c729619fe1afaa154a60b91e3efbe5`
 - Workflow run: https://github.com/Yu2uu/SuperSafeCode/actions/runs/34485779539?pr=4
@@ -30,4 +30,13 @@
   - Werkzeug upgraded from 2.0.1 to 3.1.6.
 - Scanner configuration: unchanged from checkpoint A.
 - Result: the dependency audit and all other PR checks passed.
-- Behavioural validation: No known vulnerabilities found
+- Audit result: no known vulnerabilities reported in that scan. Dependency
+  auditing alone does not establish application behavior.
+
+## C - Continued maintenance and final validation
+
+Werkzeug was subsequently updated to 3.1.9 after pip-audit reported
+CVE-2026-102598 against 3.1.6. The current requirements retain Flask 3.1.3 and
+Gunicorn 26.2.0. Gate 3 passed in [main run 39307160136](https://github.com/Yu2uu/SuperSafeCode/actions/runs/39307160136)
+at `cd635acac40f55de30d565d9056d406709576199`, verified on 2026-10-19.
+This is a dated audit result; newly published advisories may change it.
